@@ -39,6 +39,35 @@ Fonts and UI support **Georgian script** (Mkhedruli). HTML uses `lang="ka"` or `
 
 ---
 
+## How to get a Google Maps API key (for traffic)
+
+The dashboard uses the **Directions API** to show travel time and traffic. To get an API key:
+
+1. **Google Cloud Console**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/).
+   - Sign in with your Google account (or create one).
+
+2. **Create or select a project**
+   - In the top bar, click the project dropdown → **New Project** (or choose an existing project).
+   - Give it a name (e.g. “Ambient”) and click **Create**.
+
+3. **Enable the Directions API**
+   - In the left menu: **APIs & Services** → **Library** (or “Enable APIs and Services”).
+   - Search for **“Directions API”**.
+   - Open it and click **Enable**.
+
+4. **Create an API key**
+   - **APIs & Services** → **Credentials**.
+   - Click **+ Create Credentials** → **API key**.
+   - The key is created. For production, click **Edit API key** and optionally restrict it (e.g. by IP or HTTP referrer) and limit it to **Directions API** only.
+
+5. **Use the key in Ambient**
+   - Copy the API key and paste it into `api/config.php` as `'google_api_key' => 'YOUR_KEY_HERE'`.
+
+**Note:** Google gives about **$200 free credit per month** for Maps APIs; typical dashboard usage (a few requests every 10–30 minutes) stays within the free tier. See [Google Maps Platform pricing](https://developers.google.com/maps/billing-and-pricing).
+
+---
+
 ## Installation
 
 1. **Clone the repo**
