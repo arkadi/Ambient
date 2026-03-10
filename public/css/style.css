@@ -1,0 +1,595 @@
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #141420;
+    --bg-card: rgba(26, 26, 46, 0.5);
+    --text-primary: #ffffff;
+    --text-secondary: #c8c8e8;
+    --text-muted: #a8a8c8;
+    --text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 4px rgba(0, 0, 0, 0.7);
+    --accent-blue: #5fc8ff;
+    --accent-warm: #ffc266;
+    --traffic-green: #4caf50;
+    --traffic-yellow: #ffc107;
+    --traffic-red: #f44336;
+    --font-clock: 'JetBrains Mono', 'Noto Sans Georgian', monospace;
+    --font-body: 'Noto Sans Georgian', sans-serif;
+    --radius: 16px;
+    --gap: 24px;
+    --gap-sm: 16px;
+    /* Tablet touch targets (min 44px) */
+    --touch-min: 44px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Background: slides with crossfade (set from config) */
+#background-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+
+.bg-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 0;
+}
+.bg-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+#background-layer iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 56.25vw;
+    min-height: 100vh;
+    min-width: 177.78vh;
+    transform: translate(-50%, -50%);
+    border: none;
+    pointer-events: none;
+}
+
+#background-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.6);
+    pointer-events: none;
+}
+
+#dashboard {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100vw;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, auto);
+    gap: clamp(8px, 1.5vw, var(--gap-sm));
+    padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right)) max(var(--gap), env(safe-area-inset-bottom)) max(var(--gap), env(safe-area-inset-left));
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Clock and date — size adapted for wall display */
+#clock-section {
+    text-align: center;
+    padding: clamp(8px, 1.5vw, var(--gap)) 0;
+}
+
+#time {
+    font-family: var(--font-clock);
+    font-size: clamp(5rem, 18vw, 10rem);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    line-height: 1;
+    text-shadow: var(--text-shadow);
+    /* Shift seconds half-width right — optical center on hour:minute */
+    transform: translateX(0.5em);
+}
+
+#time .time-seconds {
+    font-size: 0.5em;
+    font-weight: 300;
+    vertical-align: super;
+    line-height: 0;
+    margin-left: 0.05em;
+    opacity: 0.92;
+}
+
+#date {
+    font-size: clamp(1.25rem, 3.5vw, 2rem);
+    color: var(--text-secondary);
+    margin-top: 0.35rem;
+    text-shadow: var(--text-shadow);
+}
+
+/* Weather — two blocks: icon+temp (large), details on the right */
+#weather-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(10px, 2vw, var(--gap-sm));
+    align-items: stretch;
+    min-height: 0;
+    padding: 0 2px;
+}
+
+.weather-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: clamp(10px, 2.2vw, 14px);
+}
+
+.weather-icon {
+    font-size: clamp(4rem, 12vw, 7rem);
+    line-height: 1;
+}
+
+.weather-temp-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.weather-temp {
+    font-size: clamp(3rem, 9vw, 6.75rem);
+    font-weight: 600;
+    color: var(--accent-blue);
+    text-shadow: var(--text-shadow);
+}
+
+.weather-feels-inline {
+    font-size: clamp(0.9rem, 2vw, 1.15rem);
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+}
+
+.weather-temp .unit,
+.weather-feels-inline .unit {
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+}
+
+.weather-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    justify-content: center;
+    align-items: stretch;
+    text-align: left;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: clamp(10px, 2.2vw, 14px);
+}
+
+.sun-times {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.15rem;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+}
+
+.sun-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sun-symbol {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--accent-warm);
+    text-shadow: var(--text-shadow);
+}
+
+.sun-up .sun-symbol { opacity: 0.95; }
+.sun-down .sun-symbol { opacity: 0.85; }
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+    text-align: left;
+}
+
+.detail-icon {
+    font-size: clamp(1.4rem, 3.4vw, 2rem);
+    flex-shrink: 0;
+    min-width: 1.5em;
+    text-align: center;
+}
+
+.wind-dir {
+    margin-left: 0.2rem;
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+}
+
+/* 5-day forecast — compact layout for wall display */
+#forecast-section {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(6px, 1.2vw, 10px);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.forecast-day {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: clamp(6px, 1.2vw, 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    transition: opacity 0.5s ease;
+    min-width: 0;
+}
+
+.forecast-day .day-name {
+    font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+    color: var(--text-secondary);
+    text-shadow: var(--text-shadow);
+}
+
+.forecast-day .day-icon {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.forecast-day .day-temp {
+    font-size: clamp(0.9rem, 2vw, 1.25rem);
+    font-weight: 600;
+    color: var(--accent-blue);
+    text-shadow: var(--text-shadow);
+}
+
+.forecast-day .day-temp .unit {
+    font-weight: 400;
+    color: var(--text-muted);
+    text-shadow: var(--text-shadow);
+}
+
+/* Traffic — three parts: route | spacer | route */
+#traffic-section {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: clamp(12px, 2vw, var(--gap));
+    transition: opacity 0.4s ease;
+    min-height: 0;
+}
+
+#traffic-section.hidden {
+    display: none !important;
+}
+
+#traffic-section .traffic-off-hours-msg {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    padding: 0.25rem 0;
+    text-shadow: var(--text-shadow);
+}
+
+.traffic-direction-hint {
+    text-align: center;
+    font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    text-shadow: var(--text-shadow);
+}
+
+.traffic-direction-hint.hidden {
+    display: none;
+}
+
+.traffic-routes-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: var(--gap-sm);
+    width: 100%;
+}
+
+.traffic-route {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: nowrap;
+    flex: 1 1 0;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius);
+    padding: clamp(10px, 1.5vw, 14px);
+}
+
+.traffic-route-spacer {
+    display: none;
+}
+
+.route-icon {
+    font-size: clamp(1.4rem, 3vw, 1.75rem);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.route-icon-me {
+    filter: sepia(1) saturate(4) hue-rotate(-40deg);
+}
+
+.route-icon-wife {
+    filter: sepia(0.6) saturate(2) hue-rotate(290deg);
+}
+
+.route-label {
+    min-width: 0;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    text-shadow: var(--text-shadow);
+}
+
+
+.route-time {
+    font-weight: 600;
+    min-width: 4ch;
+    font-size: clamp(0.95rem, 2vw, 1rem);
+    transition: opacity 0.5s ease;
+    flex-shrink: 0;
+    color: var(--text-primary);
+    text-align: center;
+    text-shadow: var(--text-shadow);
+}
+
+.route-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: opacity 0.5s ease;
+}
+
+.route-indicator.traffic-green {
+    background: var(--traffic-green);
+}
+
+.route-indicator.traffic-yellow {
+    background: var(--traffic-yellow);
+}
+
+.route-indicator.traffic-red {
+    background: var(--traffic-red);
+}
+
+.route-indicator.hidden {
+    display: none;
+}
+
+/* Network error indicator */
+#error-indicator {
+    position: fixed;
+    bottom: var(--gap);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1rem;
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    opacity: 0.9;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+
+#error-indicator.hidden {
+    display: none;
+}
+
+/* Smooth data update */
+.fade-out {
+    opacity: 0;
+}
+
+.fade-in {
+    opacity: 1;
+}
+
+/* Traffic hidden — clock and date grow slightly */
+#dashboard.traffic-hidden #time {
+    font-size: clamp(5.25rem, 19vw, 10.5rem);
+}
+#dashboard.traffic-hidden #date {
+    font-size: clamp(1.3rem, 3.6vw, 2.05rem);
+}
+
+/* ========== TABLET: iPad, Kindle Fire — responsive breakpoints ========== */
+
+/* Short height (any tablet) — compact vertical spacing */
+@media (max-height: 900px) {
+    #dashboard { gap: 12px; }
+    #clock-section { padding-top: 4px; padding-bottom: 4px; }
+    #weather-section { padding: 0 2px; }
+    #forecast-section { gap: 8px; }
+    .forecast-day { padding: 8px; }
+    #traffic-section { padding: 12px; }
+}
+
+/* Very short (e.g. Kindle Fire landscape) */
+@media (max-height: 700px) {
+    #dashboard { gap: 8px; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    #clock-section { padding-top: 2px; padding-bottom: 2px; }
+    #time { font-size: clamp(3.5rem, 12vw, 5.5rem); }
+    #date { font-size: clamp(1rem, 2.5vw, 1.35rem); margin-top: 0.15rem; }
+    .weather-hero, .weather-details { padding: 8px; }
+    .weather-icon { font-size: clamp(2.5rem, 8vw, 4rem); }
+    .weather-temp { font-size: clamp(2rem, 6vw, 4rem); }
+    .weather-feels-inline { font-size: 0.85rem; }
+    .detail-item { font-size: 1.1rem; }
+    .detail-icon { font-size: 1.25rem; }
+    .sun-times { font-size: 1.1rem; }
+    #forecast-section { gap: 6px; }
+    .forecast-day { padding: 6px; }
+    .forecast-day .day-name { font-size: 0.7rem; }
+    .forecast-day .day-icon { font-size: 1.25rem; }
+    .forecast-day .day-temp { font-size: 0.8rem; }
+    #traffic-section { padding: 8px; }
+    .traffic-route { padding: 8px; min-height: var(--touch-min); }
+    .route-label { font-size: 0.8rem; }
+    .route-time { font-size: 0.85rem; }
+    .route-indicator { width: 16px; height: 16px; }
+}
+
+/* ---------- Small tablet (Kindle Fire 7", ~534–600px width) ---------- */
+@media (max-width: 600px) {
+    html, body { font-size: 1.35rem; }
+    #dashboard { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); gap: 10px; }
+    #time { font-size: clamp(4rem, 16vw, 7rem); }
+    #date { font-size: clamp(1.1rem, 4vw, 1.6rem); }
+    /* Weather: stack on very narrow (portrait) */
+    #weather-section {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        gap: 10px;
+    }
+    .weather-hero { flex-direction: row; justify-content: center; gap: 1rem; padding: 12px; min-height: 0; }
+    .weather-icon { font-size: clamp(3.5rem, 14vw, 5.5rem); }
+    .weather-temp { font-size: clamp(2.5rem, 10vw, 4.5rem); }
+    .weather-feels-inline { font-size: 0.9rem; }
+    .weather-details { padding: 10px; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
+    .detail-item { font-size: clamp(1rem, 3.5vw, 1.35rem); }
+    .sun-times { margin-top: 0.25rem; font-size: 1.2rem; flex-basis: 100%; justify-content: center; }
+    /* Forecast: 3 columns on small tablet so cards stay readable */
+    #forecast-section {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .forecast-day { padding: 10px; min-height: var(--touch-min); }
+    .forecast-day .day-name { font-size: 0.85rem; }
+    .forecast-day .day-icon { font-size: 1.75rem; }
+    .forecast-day .day-temp { font-size: 1rem; }
+    /* Traffic: stack routes on very narrow */
+    .traffic-routes-wrap { flex-direction: column; gap: 8px; }
+    .traffic-route { padding: 12px; min-height: var(--touch-min); }
+    .route-icon { font-size: 1.5rem; }
+    .route-label, .route-time { font-size: 0.95rem; }
+    #error-indicator { font-size: 0.9rem; padding: 0.4rem 0.8rem; }
+}
+
+/* ---------- Medium tablet (Kindle Fire 8", ~601–768px) ---------- */
+@media (min-width: 601px) and (max-width: 768px) {
+    #dashboard { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+    #time { font-size: clamp(4.5rem, 14vw, 7.5rem); }
+    #date { font-size: clamp(1.2rem, 3.5vw, 1.75rem); }
+    #weather-section { gap: 12px; }
+    .weather-hero, .weather-details { padding: 12px; }
+    .weather-icon { font-size: clamp(4rem, 11vw, 6rem); }
+    .weather-temp { font-size: clamp(2.75rem, 8vw, 5rem); }
+    .detail-item { font-size: clamp(1.2rem, 3vw, 1.5rem); }
+    /* Forecast: 4 columns for medium tablet */
+    #forecast-section {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .forecast-day { padding: 8px; min-height: var(--touch-min); }
+    .forecast-day .day-name { font-size: 0.8rem; }
+    .forecast-day .day-icon { font-size: 1.6rem; }
+    .forecast-day .day-temp { font-size: 0.95rem; }
+    #traffic-section { padding: 12px; }
+    .traffic-route { padding: 10px; min-height: var(--touch-min); }
+}
+
+/* ---------- iPad Mini / narrow iPad (769–900px) ---------- */
+@media (min-width: 769px) and (max-width: 900px) {
+    #forecast-section { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+    .forecast-day { padding: 8px; }
+    .forecast-day .day-name { font-size: 0.85rem; }
+    .forecast-day .day-icon { font-size: 1.6rem; }
+    .forecast-day .day-temp { font-size: 0.9rem; }
+    .traffic-route { min-height: var(--touch-min); }
+}
+
+/* ---------- iPad portrait (820–1024px) — more vertical space ---------- */
+@media (orientation: portrait) and (min-width: 601px) and (max-width: 1024px) {
+    .weather-icon { font-size: clamp(5rem, 14vw, 8rem); }
+    .weather-temp { font-size: clamp(3.75rem, 11vw, 7rem); }
+    .weather-feels-inline { font-size: 1.05rem; }
+    .detail-item { font-size: clamp(1.4rem, 3.2vw, 1.75rem); }
+    .detail-icon { font-size: 1.85rem; }
+    .sun-times { font-size: clamp(1.4rem, 3.2vw, 1.75rem); }
+}
+
+/* ---------- iPad / tablet landscape — limited height ---------- */
+@media (orientation: landscape) and (max-height: 800px) {
+    #dashboard { gap: 10px; }
+    #clock-section { padding-top: 2px; padding-bottom: 2px; }
+    #time { font-size: clamp(4rem, 12vw, 6.5rem); }
+    #date { font-size: clamp(1.1rem, 2.8vw, 1.5rem); margin-top: 0.2rem; }
+    #weather-section { padding: 0 2px; }
+    .weather-hero, .weather-details { padding: 10px; }
+    .weather-icon { font-size: clamp(3rem, 8vw, 5rem); }
+    .weather-temp { font-size: clamp(2.25rem, 6vw, 5rem); }
+    .weather-feels-inline { font-size: 0.95rem; }
+    .detail-item { font-size: 1.3rem; }
+    .detail-icon { font-size: 1.5rem; }
+    .sun-times { font-size: 1.25rem; }
+    #forecast-section { gap: 6px; }
+    .forecast-day { padding: 6px; }
+    .forecast-day .day-name { font-size: 0.75rem; }
+    .forecast-day .day-icon { font-size: 1.5rem; }
+    .forecast-day .day-temp { font-size: 0.85rem; }
+    #traffic-section { padding: 10px; }
+    .traffic-route { min-height: var(--touch-min); }
+    .route-label { font-size: 0.85rem; }
+    .route-time { font-size: 0.9rem; }
+}
+
+/* Night mode (23:00–06:00) */
+body.night-mode {
+    filter: brightness(0.6);
+}
+
+body.night-mode #dashboard {
+    transition: filter 1s ease;
+}
+
