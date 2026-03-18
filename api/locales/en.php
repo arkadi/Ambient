@@ -7,6 +7,21 @@ return [
     'wind_unit' => ' m/s',
     'connection_error' => '⚠ No connection',
     'minutes_short' => ' min',
+    'seconds_short' => 's',
+
+    // Buttons and overlay titles
+    'detail_weather' => 'Weather details',
+    'forecast_5days' => '5-day forecast',
+    'traffic' => 'Traffic',
+    'traffic_off_hours' => 'Outside traffic hours',
+
+    // Detail overlay labels
+    'temperature' => 'Temperature',
+    'humidity' => 'Humidity',
+    'wind' => 'Wind',
+    'air_quality' => 'Air quality',
+    'sunrise' => 'Sunrise',
+    'sunset' => 'Sunset',
 
     // Wind directions (N, NE, E, SE, S, SW, W, NW)
     'wind_0' => 'N',

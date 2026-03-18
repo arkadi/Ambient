@@ -34,68 +34,68 @@ $htmlLang = $locale === 'ka' ? 'ka' : 'en';
         <div id="background-overlay"></div>
     </div>
     <div id="dashboard">
-
+        <div class="dashboard-center">
         <section id="clock-section">
-            <div id="time"><span id="time-hm">00:00</span><span id="time-sec" class="time-seconds">:00</span></div>
             <div id="date">—</div>
+            <div id="time"><span id="time-hm">00:00</span><span id="time-sec" class="time-seconds">:00</span></div>
+            <div class="day-progress-container">
+                <div class="day-progress-track">
+                    <div class="day-progress-fill"></div>
+                </div>
+                <div class="day-progress-labels">
+                    <span>00:00</span>
+                    <span>24:00</span>
+                </div>
+            </div>
         </section>
 
         <section id="weather-section">
-            <div class="weather-hero">
-                <div class="weather-icon" id="weather-icon"></div>
+            <div class="weather-block-compact">
+                <span class="weather-icon-compact" id="weather-icon"></span>
                 <div class="weather-temp-wrap">
-                    <div class="weather-temp">
-                        <span id="temperature">--</span><span class="unit">°C</span>
-                    </div>
-                    <div class="weather-feels-inline"><?= htmlspecialchars($t('feels_like')) ?> <span id="feels-like">--</span><span class="unit">°C</span></div>
-                </div>
-            </div>
-            <div class="weather-details">
-                <div class="detail-item">
-                    <span class="detail-icon">💧</span>
-                    <span id="humidity">--</span><span class="unit">%</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-icon">💨</span>
-                    <span id="wind-speed">--</span><span class="unit" id="wind-unit"><?= htmlspecialchars($t('wind_unit')) ?></span>
-                    <span id="wind-direction" class="wind-dir">--</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-icon">🫁</span>
-                    <span id="air-quality">--</span>
-                </div>
-                <div class="sun-times">
-                    <span class="sun-item sun-up"><span class="sun-symbol">↑</span> <span id="sunrise">--:--</span></span>
-                    <span class="sun-item sun-down"><span class="sun-symbol">↓</span> <span id="sunset">--:--</span></span>
+                    <span class="weather-temp-compact"><span id="temperature">--</span><span class="unit">°C</span></span>
+                    <span class="weather-feels-inline"><?= htmlspecialchars($t('feels_like')) ?> <span id="feels-like">--</span><span class="unit">°C</span></span>
                 </div>
             </div>
         </section>
+        </div>
 
-        <section id="forecast-section">
-            <!-- JS generates 5 .forecast-day elements -->
-        </section>
-
-        <section id="traffic-section">
-            <div class="traffic-off-hours-msg hidden" id="traffic-off-hours-msg"></div>
-           
-            <div class="traffic-routes-wrap">
-                <div class="traffic-route traffic-route-left" id="route-me">
-                    <span class="route-icon route-icon-me" id="route-me-icon" aria-hidden="true">🚗</span>
-                    <span class="route-label" id="route-me-label">—</span>
-                    <span class="route-time" id="route-me-time">--</span>
-                    <span class="route-indicator" id="route-me-indicator"></span>
-                </div>
-                <div class="traffic-route-spacer"></div>
-                <div class="traffic-route traffic-route-right" id="route-wife">
-                    <span class="route-icon route-icon-wife" id="route-wife-icon" aria-hidden="true">🚗</span>
-                    <span class="route-label" id="route-wife-label">—</span>
-                    <span class="route-time" id="route-wife-time">--</span>
-                    <span class="route-indicator" id="route-wife-indicator"></span>
-                </div>
-            </div>
-        </section>
+        <div class="buttons-row">
+            <button type="button" class="action-btn" data-overlay="detail" aria-label="<?= htmlspecialchars($t('detail_weather')) ?>">
+                <span class="btn-icon">🌡️</span>
+                <span class="btn-label"><?= htmlspecialchars($t('detail_weather')) ?></span>
+            </button>
+            <button type="button" class="action-btn" data-overlay="forecast" aria-label="<?= htmlspecialchars($t('forecast_5days')) ?>">
+                <span class="btn-icon">📅</span>
+                <span class="btn-label"><?= htmlspecialchars($t('forecast_5days')) ?></span>
+            </button>
+            <button type="button" class="action-btn" data-overlay="traffic" aria-label="<?= htmlspecialchars($t('traffic')) ?>">
+                <span class="btn-icon">🚗</span>
+                <span class="btn-label"><?= htmlspecialchars($t('traffic')) ?></span>
+            </button>
+        </div>
 
         <div id="error-indicator" class="hidden"><?= htmlspecialchars($t('connection_error')) ?></div>
+    </div>
+
+    <div id="overlay-backdrop" class="hidden" aria-hidden="true">
+        <div id="overlay-panel" role="dialog" aria-modal="true">
+            <div class="overlay-countdown-track">
+                <div class="overlay-countdown-fill" id="overlay-countdown-fill"></div>
+            </div>
+            <div class="overlay-header">
+                <span class="overlay-title" id="overlay-title"></span>
+                <div class="overlay-header-right">
+                    <span class="overlay-countdown-text" id="overlay-countdown-text"></span>
+                    <button type="button" class="overlay-close-btn" id="overlay-close-btn" aria-label="Close">✕</button>
+                </div>
+            </div>
+            <div class="overlay-body">
+                <div id="overlay-detail" class="overlay-content hidden"></div>
+                <div id="overlay-forecast" class="overlay-content hidden"></div>
+                <div id="overlay-traffic" class="overlay-content hidden"></div>
+            </div>
+        </div>
     </div>
 
     <script>

@@ -84,30 +84,53 @@ html, body {
     min-height: 100vh;
     min-height: 100dvh;
     width: 100vw;
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, auto);
-    gap: clamp(8px, 1.5vw, var(--gap-sm));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: clamp(12px, 2vw, var(--gap));
     padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right)) max(var(--gap), env(safe-area-inset-bottom)) max(var(--gap), env(safe-area-inset-left));
     overflow: hidden;
     box-sizing: border-box;
 }
 
-/* Clock and date — size adapted for wall display */
+.dashboard-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+}
+
+/* Clock and date — centered, larger */
 #clock-section {
     text-align: center;
-    padding: clamp(8px, 1.5vw, var(--gap)) 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#date {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    text-shadow: var(--text-shadow);
 }
 
 #time {
     font-family: var(--font-clock);
-    font-size: clamp(5rem, 18vw, 10rem);
+    font-size: clamp(6rem, 28vmin, 18rem);
     font-weight: 300;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
-    line-height: 1;
+    line-height: 0.95;
     text-shadow: var(--text-shadow);
-    /* Shift seconds half-width right — optical center on hour:minute */
-    transform: translateX(0.5em);
+    display: inline-block;
+    margin: 0 auto;
 }
 
 #time .time-seconds {
@@ -119,79 +142,337 @@ html, body {
     opacity: 0.92;
 }
 
-#date {
-    font-size: clamp(1.25rem, 3.5vw, 2rem);
-    color: var(--text-secondary);
-    margin-top: 0.35rem;
-    text-shadow: var(--text-shadow);
+/* Decorative line (24h style) — always full, no progress logic */
+.day-progress-container {
+    max-width: 420px;
+    margin: 12px auto 0;
+    width: 100%;
 }
 
-/* Weather — two blocks: icon+temp (large), details on the right */
+.day-progress-track {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.day-progress-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(95, 200, 255, 0.5) 0%, rgba(95, 200, 255, 0.8) 100%);
+    box-shadow: 0 0 8px rgba(95, 200, 255, 0.3);
+}
+
+.day-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-family: var(--font-clock);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.15);
+    letter-spacing: 1px;
+}
+
+/* Weather — compact block (icon + temp + feels) */
 #weather-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(10px, 2vw, var(--gap-sm));
-    align-items: stretch;
-    min-height: 0;
     padding: 0 2px;
 }
 
-.weather-hero {
+.weather-block-compact {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem;
-    min-width: 0;
-    background: var(--bg-card);
-    border-radius: var(--radius);
-    padding: clamp(10px, 2.2vw, 14px);
+    gap: 20px;
 }
 
-.weather-icon {
-    font-size: clamp(4rem, 12vw, 7rem);
+.weather-icon-compact {
+    font-size: clamp(3rem, 12vw, 5rem);
     line-height: 1;
 }
 
 .weather-temp-wrap {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
+    align-items: flex-start;
+    gap: 2px;
 }
 
-.weather-temp {
-    font-size: clamp(3rem, 9vw, 6.75rem);
+.weather-temp-compact {
+    font-family: var(--font-clock);
+    font-size: clamp(2.5rem, 8vw, 4rem);
     font-weight: 600;
     color: var(--accent-blue);
     text-shadow: var(--text-shadow);
+    line-height: 1;
 }
 
 .weather-feels-inline {
-    font-size: clamp(0.9rem, 2vw, 1.15rem);
+    font-size: clamp(0.85rem, 2vw, 1.1rem);
     font-weight: 400;
     color: var(--text-secondary);
     text-shadow: var(--text-shadow);
 }
 
-.weather-temp .unit,
+.weather-temp-compact .unit,
 .weather-feels-inline .unit {
     font-weight: 400;
     color: var(--text-secondary);
     text-shadow: var(--text-shadow);
 }
 
-.weather-details {
+/* Action buttons row — pushed to bottom, 80% opacity */
+.buttons-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin-top: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.action-btn {
+    flex: 1;
+    min-width: 0;
+    max-width: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(26, 26, 46, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+    opacity: 0.8;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.action-btn.active {
+    background: rgba(95, 200, 255, 0.2);
+    border-color: rgba(95, 200, 255, 0.4);
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+.btn-icon {
+    font-size: 20px;
+}
+
+.btn-label {
+    letter-spacing: 0.5px;
+}
+
+/* Overlay (popups) */
+#overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+}
+
+#overlay-backdrop.hidden {
+    display: none;
+}
+
+#overlay-panel {
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: auto;
+    background: linear-gradient(160deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.overlay-countdown-track {
+    height: 3px;
+    border-radius: 24px 24px 0 0;
+    background: rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+}
+
+.overlay-countdown-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(95, 200, 255, 0.6), rgba(96, 165, 250, 0.8));
+    transition: width 1s linear;
+}
+
+.overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.overlay-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.5px;
+}
+
+.overlay-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.overlay-countdown-text {
+    font-family: var(--font-clock);
+    font-size: 13px;
+    color: rgba(95, 200, 255, 0.6);
+}
+
+.overlay-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    font-family: inherit;
+}
+
+.overlay-close-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+.overlay-body {
+    padding: 0;
+}
+
+.overlay-content {
+    padding: 24px 28px 28px;
+}
+
+.overlay-content.hidden {
+    display: none !important;
+}
+
+/* Overlay: detail weather grid */
+.overlay-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.overlay-detail-card {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    min-width: 0;
-    justify-content: center;
-    align-items: stretch;
-    text-align: left;
-    background: var(--bg-card);
+    gap: 4px;
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.overlay-detail-card .detail-icon {
+    font-size: 22px;
+}
+
+.overlay-detail-card .detail-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.overlay-detail-card .detail-value {
+    font-family: var(--font-clock);
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Overlay: forecast grid */
+.overlay-forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.overlay-forecast-grid .forecast-day {
+    padding: 18px 10px;
+}
+
+/* Overlay: traffic list */
+.overlay-traffic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.overlay-traffic-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
     border-radius: var(--radius);
-    padding: clamp(10px, 2.2vw, 14px);
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.overlay-traffic-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.overlay-traffic-name {
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.overlay-traffic-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.overlay-traffic-duration {
+    font-family: var(--font-clock);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.overlay-traffic-duration.traffic-green { color: var(--traffic-green); }
+.overlay-traffic-duration.traffic-yellow { color: var(--traffic-yellow); }
+.overlay-traffic-duration.traffic-red { color: var(--traffic-red); }
+
+.overlay-traffic-off-hours {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1rem;
+    padding: 2rem;
 }
 
 .sun-times {
@@ -435,14 +716,6 @@ html, body {
     opacity: 1;
 }
 
-/* Traffic hidden — clock and date grow slightly */
-#dashboard.traffic-hidden #time {
-    font-size: clamp(5.25rem, 19vw, 10.5rem);
-}
-#dashboard.traffic-hidden #date {
-    font-size: clamp(1.3rem, 3.6vw, 2.05rem);
-}
-
 /* ========== TABLET: iPad, Kindle Fire — responsive breakpoints ========== */
 
 /* Short height (any tablet) — compact vertical spacing */
@@ -459,7 +732,7 @@ html, body {
 @media (max-height: 700px) {
     #dashboard { gap: 8px; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
     #clock-section { padding-top: 2px; padding-bottom: 2px; }
-    #time { font-size: clamp(3.5rem, 12vw, 5.5rem); }
+    #time { font-size: clamp(4rem, 28vmin, 14rem); }
     #date { font-size: clamp(1rem, 2.5vw, 1.35rem); margin-top: 0.15rem; }
     .weather-hero, .weather-details { padding: 8px; }
     .weather-icon { font-size: clamp(2.5rem, 8vw, 4rem); }
@@ -484,7 +757,7 @@ html, body {
 @media (max-width: 600px) {
     html, body { font-size: 1.35rem; }
     #dashboard { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); gap: 10px; }
-    #time { font-size: clamp(4rem, 16vw, 7rem); }
+    #time { font-size: clamp(5rem, 32vmin, 16rem); }
     #date { font-size: clamp(1.1rem, 4vw, 1.6rem); }
     /* Weather: stack on very narrow (portrait) */
     #weather-section {
@@ -519,7 +792,7 @@ html, body {
 /* ---------- Medium tablet (Kindle Fire 8", ~601–768px) ---------- */
 @media (min-width: 601px) and (max-width: 768px) {
     #dashboard { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-    #time { font-size: clamp(4.5rem, 14vw, 7.5rem); }
+    #time { font-size: clamp(5.5rem, 30vmin, 17rem); }
     #date { font-size: clamp(1.2rem, 3.5vw, 1.75rem); }
     #weather-section { gap: 12px; }
     .weather-hero, .weather-details { padding: 12px; }
@@ -563,7 +836,7 @@ html, body {
 @media (orientation: landscape) and (max-height: 800px) {
     #dashboard { gap: 10px; }
     #clock-section { padding-top: 2px; padding-bottom: 2px; }
-    #time { font-size: clamp(4rem, 12vw, 6.5rem); }
+    #time { font-size: clamp(4.5rem, 28vmin, 14rem); }
     #date { font-size: clamp(1.1rem, 2.8vw, 1.5rem); margin-top: 0.2rem; }
     #weather-section { padding: 0 2px; }
     .weather-hero, .weather-details { padding: 10px; }

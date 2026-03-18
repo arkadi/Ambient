@@ -7,6 +7,21 @@ return [
     'wind_unit' => ' მ/წმ',
     'connection_error' => '⚠ კავშირი არ არის',
     'minutes_short' => ' წთ',
+    'seconds_short' => 'წმ',
+
+    // Buttons and overlay titles
+    'detail_weather' => 'დეტალური ამინდი',
+    'forecast_5days' => '5 დღის პროგნოზი',
+    'traffic' => 'ტრაფიკი',
+    'traffic_off_hours' => 'ტრაფიკის საათები არ არის',
+
+    // Detail overlay labels
+    'temperature' => 'ტემპერატურა',
+    'humidity' => 'ტენიანობა',
+    'wind' => 'ქარი',
+    'air_quality' => 'ჰაერის ხარისხი',
+    'sunrise' => 'მზის ამოსვლა',
+    'sunset' => 'მზის ჩასვლა',
 
     // Wind directions (N, NE, E, SE, S, SW, W, NW)
     'wind_0' => 'ჩ',

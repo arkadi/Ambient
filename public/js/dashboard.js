@@ -8,11 +8,18 @@ const CONFIG = {
     REFRESH_TRAFFIC: 10 * 60 * 1000,
     CLOCK_INTERVAL: 1000,
     TIMEZONE: 'Asia/Tbilisi',
+    OVERLAY_COUNTDOWN: 10,
     locale: (typeof window !== 'undefined' && window.__LOCALE__) ? window.__LOCALE__ : 'en',
     strings: (typeof window !== 'undefined' && window.__L10N__) ? window.__L10N__ : {},
     TRAFFIC_THRESHOLDS_DEFAULT: { green: 20, yellow: 40, red: 60 },
     traffic_thresholds: null,
 };
+
+var lastWeatherData = null;
+var lastTrafficData = null;
+var activeOverlay = null;
+var overlayCountdown = 0;
+var overlayCountdownTimerId = null;
 
 function t(key) {
     return (CONFIG.strings && CONFIG.strings[key]) || key;
@@ -107,8 +114,8 @@ async function fetchWeather() {
         const data = await res.json();
         if (data.success) {
             hideErrorIndicator();
+            lastWeatherData = data;
             renderWeather(data);
-            renderForecast(data);
         }
     } catch (_e) {
         showErrorIndicator();
@@ -136,42 +143,20 @@ function formatAirQuality(aqi) {
 
 function renderWeather(data) {
     const current = data.current || {};
-    const daily = data.daily || {};
     const temp = current.temperature_2m;
-    // Feels like: from API (apparent_temperature); if missing — show actual temperature
     const feels = current.apparent_temperature != null ? current.apparent_temperature : current.temperature_2m;
-    const humidity = current.relative_humidity_2m;
-    const windSpeed = current.wind_speed_10m;
-    const windDir = current.wind_direction_10m;
     const code = current.weather_code != null ? current.weather_code : 0;
-    const sunriseStr = (daily.sunrise && daily.sunrise[0]) ? daily.sunrise[0] : null;
-    const sunsetStr = (daily.sunset && daily.sunset[0]) ? daily.sunset[0] : null;
-    const usAqi = current.us_aqi != null ? current.us_aqi : null;
-
     const now = new Date();
-    const hour = now.getHours();
-    const isNight = hour >= 20 || hour < 6;
+    const isNight = now.getHours() >= 20 || now.getHours() < 6;
 
     const tempEl = document.getElementById('temperature');
     const feelsEl = document.getElementById('feels-like');
-    const humidityEl = document.getElementById('humidity');
-    const windSpeedEl = document.getElementById('wind-speed');
-    const windDirEl = document.getElementById('wind-direction');
     const iconEl = document.getElementById('weather-icon');
-    const airQualityEl = document.getElementById('air-quality');
-    const sunriseEl = document.getElementById('sunrise');
-    const sunsetEl = document.getElementById('sunset');
 
     function apply() {
         if (tempEl) tempEl.textContent = temp != null ? Math.round(temp) : '--';
         if (feelsEl) feelsEl.textContent = feels != null ? Math.round(feels) : '--';
-        if (humidityEl) humidityEl.textContent = humidity != null ? humidity : '--';
-        if (windSpeedEl) windSpeedEl.textContent = windSpeed != null ? windSpeed.toFixed(1) : '--';
-        if (windDirEl) windDirEl.textContent = windDir != null ? degreesToDirection(windDir) : '--';
         if (iconEl) iconEl.textContent = getWeatherIcon(code, isNight);
-        if (airQualityEl) airQualityEl.textContent = formatAirQuality(usAqi);
-        if (sunriseEl) sunriseEl.textContent = formatSunTime(sunriseStr);
-        if (sunsetEl) sunsetEl.textContent = formatSunTime(sunsetStr);
     }
 
     const section = document.getElementById('weather-section');
@@ -182,19 +167,16 @@ function renderWeather(data) {
     }
 }
 
-function renderForecast(data) {
-    const daily = data.daily || {};
+function renderForecastOverlay(container) {
+    if (!container || !lastWeatherData) return;
+    const daily = lastWeatherData.daily || {};
     const times = daily.time || [];
     const codes = daily.weather_code || [];
     const maxT = daily.temperature_2m_max || [];
     const minT = daily.temperature_2m_min || [];
-
-    const container = document.getElementById('forecast-section');
-    if (!container) return;
-
     const dayNames = new Intl.DateTimeFormat(localeForIntl(), { weekday: 'short', timeZone: CONFIG.TIMEZONE });
 
-    container.innerHTML = '';
+    var html = '';
     const count = Math.min(5, times.length);
     for (let i = 0; i < count; i++) {
         const date = new Date(times[i] + 'T12:00:00');
@@ -202,15 +184,14 @@ function renderForecast(data) {
         const code = codes[i] != null ? codes[i] : 0;
         const max = maxT[i] != null ? Math.round(maxT[i]) : '--';
         const min = minT[i] != null ? Math.round(minT[i]) : '--';
-
-        const card = document.createElement('div');
-        card.className = 'forecast-day';
-        card.innerHTML =
+        html +=
+            '<div class="forecast-day">' +
             '<span class="day-name">' + dayName + '</span>' +
             '<span class="day-icon">' + getWeatherIcon(code, false) + '</span>' +
-            '<span class="day-temp">' + max + '<span class="unit">°</span>/' + min + '<span class="unit">°</span></span>';
-        container.appendChild(card);
+            '<span class="day-temp">' + max + '<span class="unit">°</span>/' + min + '<span class="unit">°</span></span>' +
+            '</div>';
     }
+    container.innerHTML = '<div class="overlay-forecast-grid">' + html + '</div>';
 }
 
 // === TRAFFIC ===
@@ -220,17 +201,29 @@ async function fetchTraffic() {
         const data = await res.json();
         if (data.success) {
             hideErrorIndicator();
-            renderTraffic(data);
+            lastTrafficData = data;
         }
     } catch (_e) {
         showErrorIndicator();
     }
 }
 
-function renderTraffic(data) {
-    const offHours = data.off_hours === true;
-    const routes = data.routes || {};
-    // Thresholds (green/yellow/red) come from traffic API per route
+function getTrafficThresholds(routeKey) {
+    const defaultTh = CONFIG.TRAFFIC_THRESHOLDS_DEFAULT;
+    const th = CONFIG.traffic_thresholds?.[routeKey];
+    return (th && typeof th.green === 'number' && typeof th.yellow === 'number' && typeof th.red === 'number')
+        ? th
+        : defaultTh;
+}
+
+function renderTrafficOverlay(container) {
+    if (!container) return;
+    if (!lastTrafficData) {
+        container.innerHTML = '';
+        return;
+    }
+    const offHours = lastTrafficData.off_hours === true;
+    const routes = lastTrafficData.routes || {};
     if (routes && typeof routes === 'object') {
         Object.keys(routes).forEach(function (key) {
             const r = routes[key];
@@ -240,70 +233,155 @@ function renderTraffic(data) {
             }
         });
     }
-    const sectionEl = document.getElementById('traffic-section');
-    const dashboardEl = document.getElementById('dashboard');
-
-    function setRoute(key, label, timeStr, colorClass) {
-        const labelEl = document.getElementById('route-' + key + '-label');
-        const timeEl = document.getElementById('route-' + key + '-time');
-        const indEl = document.getElementById('route-' + key + '-indicator');
-        if (labelEl) labelEl.textContent = (label != null && label !== '') ? label : '—';
-        if (timeEl) timeEl.textContent = timeStr;
-        if (indEl) {
-            indEl.className = 'route-indicator ' + (colorClass || '');
-            indEl.classList.toggle('hidden', !colorClass);
-        }
-    }
-
     if (offHours) {
-        if (sectionEl) sectionEl.classList.add('hidden');
-        if (dashboardEl) dashboardEl.classList.add('traffic-hidden');
+        container.innerHTML = '<div class="overlay-traffic-off-hours">' + t('traffic_off_hours') + '</div>';
         return;
     }
-
-    if (sectionEl) sectionEl.classList.remove('hidden');
-    if (dashboardEl) dashboardEl.classList.remove('traffic-hidden');
-
-    const toHome = data.traffic_direction === 'to_home';
-    const hintEl = document.getElementById('traffic-direction-hint');
-    if (hintEl) {
-        hintEl.classList.toggle('hidden', !toHome);
-    }
-    if (sectionEl) {
-        sectionEl.classList.toggle('traffic-to-home', toHome);
-    }
-    const dirIcon = toHome ? '🏠' : '🚗';
-    const iconMe = document.getElementById('route-me-icon');
-    const iconWife = document.getElementById('route-wife-icon');
-    if (iconMe) iconMe.textContent = dirIcon;
-    if (iconWife) iconWife.textContent = dirIcon;
-
-    const defaultTh = CONFIG.TRAFFIC_THRESHOLDS_DEFAULT;
-    function getThresholds(routeKey) {
-        const t = CONFIG.traffic_thresholds?.[routeKey];
-        return (t && typeof t.green === 'number' && typeof t.yellow === 'number' && typeof t.red === 'number')
-            ? t
-            : defaultTh;
-    }
-
-    // First two routes from API map to left/right display slots (DOM ids)
     const routeKeys = Object.keys(routes);
-    const slots = ['me', 'wife'];
-    for (let i = 0; i < slots.length; i++) {
-        const slotId = slots[i];
-        const key = routeKeys[i];
-        const r = key ? routes[key] : null;
+    var html = '<div class="overlay-traffic-list">';
+    routeKeys.forEach(function (key) {
+        const r = routes[key];
         let timeStr = '—';
         let colorClass = '';
         if (r && r.travel_time_min != null) {
             timeStr = r.travel_time_min + t('minutes_short');
-            const th = getThresholds(key);
+            const th = getTrafficThresholds(key);
             if (r.travel_time_min < th.green) colorClass = 'traffic-green';
             else if (r.travel_time_min <= th.yellow) colorClass = 'traffic-yellow';
             else colorClass = 'traffic-red';
         }
-        setRoute(slotId, r ? r.label : null, timeStr, colorClass);
+        const label = (r && r.label) ? r.label : '—';
+        html +=
+            '<div class="overlay-traffic-card">' +
+            '<div class="overlay-traffic-left">' +
+            '<span style="font-size:36px">🚗</span>' +
+            '<div><div class="overlay-traffic-name">' + label + '</div></div>' +
+            '</div>' +
+            '<div class="overlay-traffic-right">' +
+            '<div class="overlay-traffic-duration ' + colorClass + '">' + timeStr + '</div>' +
+            '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// === OVERLAY (popups) ===
+function renderDetailOverlay(container) {
+    if (!container || !lastWeatherData) return;
+    const current = lastWeatherData.current || {};
+    const daily = lastWeatherData.daily || {};
+    const temp = current.temperature_2m;
+    const feels = current.apparent_temperature != null ? current.apparent_temperature : current.temperature_2m;
+    const humidity = current.relative_humidity_2m;
+    const windSpeed = current.wind_speed_10m;
+    const windDir = current.wind_direction_10m;
+    const usAqi = current.us_aqi != null ? current.us_aqi : null;
+    const sunriseStr = (daily.sunrise && daily.sunrise[0]) ? daily.sunrise[0] : null;
+    const sunsetStr = (daily.sunset && daily.sunset[0]) ? daily.sunset[0] : null;
+    const windStr = (windSpeed != null && windDir != null)
+        ? (windSpeed.toFixed(1) + t('wind_unit') + ' ' + degreesToDirection(windDir))
+        : '--';
+
+    var items = [
+        { icon: '🌡️', label: t('temperature'), value: (temp != null ? Math.round(temp) : '--') + '°C' },
+        { icon: '🤔', label: t('feels_like'), value: (feels != null ? Math.round(feels) : '--') + '°C' },
+        { icon: '💧', label: t('humidity'), value: (humidity != null ? humidity : '--') + '%' },
+        { icon: '💨', label: t('wind'), value: windStr },
+        { icon: '🫁', label: t('air_quality'), value: formatAirQuality(usAqi) },
+        { icon: '🌅', label: t('sunrise'), value: formatSunTime(sunriseStr) },
+        { icon: '🌇', label: t('sunset'), value: formatSunTime(sunsetStr) },
+    ];
+    var html = '<div class="overlay-detail-grid">';
+    items.forEach(function (item) {
+        html +=
+            '<div class="overlay-detail-card">' +
+            '<span class="detail-icon">' + item.icon + '</span>' +
+            '<span class="detail-label">' + item.label + '</span>' +
+            '<span class="detail-value">' + item.value + '</span>' +
+            '</div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function stopOverlayCountdown() {
+    if (overlayCountdownTimerId) {
+        clearInterval(overlayCountdownTimerId);
+        overlayCountdownTimerId = null;
     }
+    overlayCountdown = 0;
+}
+
+function startOverlayCountdown() {
+    stopOverlayCountdown();
+    overlayCountdown = CONFIG.OVERLAY_COUNTDOWN;
+    var fillEl = document.getElementById('overlay-countdown-fill');
+    var textEl = document.getElementById('overlay-countdown-text');
+    function updateCountdownDisplay() {
+        if (fillEl) fillEl.style.width = (overlayCountdown / CONFIG.OVERLAY_COUNTDOWN) * 100 + '%';
+        if (textEl) textEl.textContent = overlayCountdown + ' ' + t('seconds_short');
+    }
+    updateCountdownDisplay();
+    overlayCountdownTimerId = setInterval(function () {
+        overlayCountdown--;
+        updateCountdownDisplay();
+        if (overlayCountdown <= 0) {
+            stopOverlayCountdown();
+            closeOverlay();
+        }
+    }, 1000);
+}
+
+function closeOverlay() {
+    activeOverlay = null;
+    stopOverlayCountdown();
+    var backdrop = document.getElementById('overlay-backdrop');
+    if (backdrop) {
+        backdrop.classList.add('hidden');
+        backdrop.setAttribute('aria-hidden', 'true');
+    }
+    document.querySelectorAll('.action-btn').forEach(function (btn) {
+        btn.classList.remove('active');
+    });
+}
+
+function openOverlay(type) {
+    if (activeOverlay === type) {
+        closeOverlay();
+        return;
+    }
+    activeOverlay = type;
+    var backdrop = document.getElementById('overlay-backdrop');
+    var titleEl = document.getElementById('overlay-title');
+    var detailEl = document.getElementById('overlay-detail');
+    var forecastEl = document.getElementById('overlay-forecast');
+    var trafficEl = document.getElementById('overlay-traffic');
+    if (!backdrop || !titleEl || !detailEl || !forecastEl || !trafficEl) return;
+
+    detailEl.classList.add('hidden');
+    forecastEl.classList.add('hidden');
+    trafficEl.classList.add('hidden');
+
+    if (type === 'detail') {
+        titleEl.textContent = '🌡️ ' + t('detail_weather');
+        renderDetailOverlay(detailEl);
+        detailEl.classList.remove('hidden');
+    } else if (type === 'forecast') {
+        titleEl.textContent = '📅 ' + t('forecast_5days');
+        renderForecastOverlay(forecastEl);
+        forecastEl.classList.remove('hidden');
+    } else if (type === 'traffic') {
+        titleEl.textContent = '🚗 ' + t('traffic');
+        renderTrafficOverlay(trafficEl);
+        trafficEl.classList.remove('hidden');
+    }
+
+    backdrop.classList.remove('hidden');
+    backdrop.setAttribute('aria-hidden', 'false');
+    document.querySelectorAll('.action-btn').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-overlay') === type);
+    });
+    startOverlayCountdown();
 }
 
 // === Network error indicator ===
@@ -427,6 +505,33 @@ function init() {
     setInterval(updateClock, CONFIG.CLOCK_INTERVAL);
 
     requestWakeLock();
+
+    var backdrop = document.getElementById('overlay-backdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) {
+                closeOverlay();
+            }
+        });
+    }
+    var closeBtn = document.getElementById('overlay-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeOverlay);
+    }
+    var panel = document.getElementById('overlay-panel');
+    if (panel) {
+        panel.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+    }
+    document.querySelectorAll('.action-btn').forEach(function (btn) {
+        var type = btn.getAttribute('data-overlay');
+        if (type) {
+            btn.addEventListener('click', function () {
+                openOverlay(type);
+            });
+        }
+    });
 
     fetchSettings().then(function () {
         Promise.all([fetchWeather(), fetchTraffic()]).catch(function () {
